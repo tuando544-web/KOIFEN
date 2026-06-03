@@ -1,0 +1,2131 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="KOIF">
+<meta name="theme-color" content="#1D9E75">
+<title>KOIF – Học Từ Vựng</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231D9E75'/%3E%3Ctext y='.9em' font-size='60' x='15'%3E📚%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyC3vfRImSklD8uTSFDPDvOMQehbGYwMBHI",
+  authDomain: "koifapp.firebaseapp.com",
+  projectId: "koifapp",
+  storageBucket: "koifapp.firebasestorage.app",
+  messagingSenderId: "871683053677",
+  appId: "1:871683053677:web:cd5c8f66a6b91940ae4764"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+function getDeviceId() {
+  let id = localStorage.getItem("koif_device_id");
+  if (!id) { id = "device_" + Date.now() + "_" + Math.random().toString(36).slice(2,9); localStorage.setItem("koif_device_id", id); }
+  return id;
+}
+window.fbLoad = async function() {
+  try { const snap = await getDoc(doc(db,"users",getDeviceId())); return snap.exists() ? snap.data().appData||null : null; }
+  catch(e) { return null; }
+};
+window.fbSave = async function(data) {
+  try {
+    const d2 = JSON.parse(JSON.stringify(data));
+    if (d2.words) Object.keys(d2.words).forEach(id => { d2.words[id] = d2.words[id].map(w=>({...w,img:null})); });
+    await setDoc(doc(db,"users",getDeviceId()), { appData:d2, updatedAt:new Date().toISOString() });
+    return true;
+  } catch(e) { return false; }
+};
+window.fbReady = true;
+window.dispatchEvent(new Event("fbReady"));
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+/* =============================================
+   KOIF – Vibrant Dark Design System
+   ============================================= */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --bg:      #111318;
+  --card:    #1A1D24;
+  --card2:   #22262F;
+  --text:    #EEF0F5;
+  --muted:   #6B7280;
+  --border:  #2A2E38;
+  --shadow:  0 2px 12px rgba(0,0,0,0.4);
+  --shadow-md: 0 6px 28px rgba(0,0,0,0.5);
+
+  /* Accent – cyan-teal vibrant */
+  --accent:    #00D4AA;
+  --accent-l:  rgba(0,212,170,0.12);
+  --accent-d:  #00A882;
+
+  --teal:   #00D4AA; --teal-l:  rgba(0,212,170,0.15); --teal-d:  #00A882;
+  --purple: #A78BFA; --purple-l:rgba(167,139,250,0.15); --purple-d:#7C3AED;
+  --blue:   #60A5FA; --blue-l:  rgba(96,165,250,0.15);  --blue-d:  #2563EB;
+  --amber:  #FBBF24; --amber-l: rgba(251,191,36,0.15);  --amber-d: #D97706;
+  --coral:  #F87171; --coral-l: rgba(248,113,113,0.15); --coral-d: #DC2626;
+  --pink:   #F472B6; --pink-l:  rgba(244,114,182,0.15); --pink-d:  #DB2777;
+  --green:  #4ADE80; --green-l: rgba(74,222,128,0.15);  --green-d: #16A34A;
+
+  --r:   10px;
+  --r-lg: 14px;
+  --font: 'Outfit', 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+  --bnav: 60px;
+}
+
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overscroll-behavior: none;
+}
+
+/* ── SPLASH ── */
+#splash {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px;
+  background: var(--bg);
+  transition: opacity .45s ease, transform .45s ease;
+}
+#splash.hide { opacity: 0; transform: scale(1.06); pointer-events: none; }
+.splash-logo-wrap {
+  width: 96px; height: 96px; border-radius: 28px;
+  background: var(--accent-l);
+  border: 2px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 52px; margin-bottom: 8px;
+  animation: splashPop .7s cubic-bezier(.34,1.56,.64,1) both;
+  box-shadow: 0 0 40px rgba(0,212,170,0.3);
+}
+.splash-name {
+  font-size: 36px; font-weight: 900; color: var(--accent); letter-spacing: -1px;
+  animation: splashUp .5s .2s ease both; opacity: 0;
+}
+.splash-sub {
+  font-size: 14px; color: var(--muted); font-weight: 600;
+  animation: splashUp .5s .35s ease both; opacity: 0;
+}
+.splash-dots {
+  display: flex; gap: 6px; margin-top: 40px;
+  animation: splashUp .5s .5s ease both; opacity: 0;
+}
+.splash-dots span {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent);
+  animation: dotBounce 1s .6s infinite;
+}
+.splash-dots span:nth-child(2) { animation-delay: .75s; }
+.splash-dots span:nth-child(3) { animation-delay: .9s; }
+@keyframes splashPop  { from{opacity:0;transform:scale(.3) rotate(-15deg)} 70%{transform:scale(1.1)} to{opacity:1;transform:scale(1)} }
+@keyframes splashUp   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+@keyframes dotBounce  { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-8px)} }
+
+/* ── TOP HEADER ── */
+.header {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  padding-top: env(safe-area-inset-top, 0px);
+  display: flex; align-items: center; gap: 10px;
+  height: calc(54px + env(safe-area-inset-top, 0px));
+}
+.header-logo {
+  font-size: 20px; font-weight: 900; letter-spacing: -0.5px;
+  color: var(--text); line-height: 1; flex: 1;
+}
+.header-logo .k { color: var(--accent); }
+.header-logo .oif { color: var(--text); }
+
+.sync-badge {
+  font-size: 11px; font-weight: 700; padding: 4px 10px;
+  border-radius: 20px; white-space: nowrap;
+  transition: all .3s;
+}
+
+/* ── BOTTOM NAV ── */
+.bnav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  height: calc(var(--bnav) + env(safe-area-inset-bottom, 0px));
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: flex-start;
+  padding-top: 6px;
+  max-width: 640px; margin: 0 auto;
+}
+/* center on desktop */
+@media (min-width: 640px) {
+  .bnav { left: 50%; transform: translateX(-50%); }
+}
+.bnav-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 3px; padding: 6px 0;
+  border: none; background: none; cursor: pointer;
+  color: var(--muted); font-family: var(--font);
+  transition: color .15s;
+}
+.bnav-btn svg { width: 24px; height: 24px; stroke-width: 2; }
+.bnav-btn span { font-size: 10px; font-weight: 700; }
+.bnav-btn.active { color: var(--accent); }
+.bnav-btn.active svg { filter: drop-shadow(0 0 6px rgba(0,212,170,0.5)); }
+
+/* ── PAGES ── */
+.page {
+  display: none; padding: 0;
+  max-width: 640px; margin: 0 auto;
+  padding-bottom: calc(var(--bnav) + env(safe-area-inset-bottom, 0px) + 16px);
+  animation: pageIn .25s ease both;
+}
+.page.active { display: block; }
+@keyframes pageIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+/* ── SECTION HEADER ── */
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 16px 10px;
+}
+.section-title {
+  font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -0.3px;
+}
+.section-sub { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+
+/* ── STREAK / HERO BANNER ── */
+.hero-banner {
+  margin: 12px 16px 0;
+  background: linear-gradient(135deg, rgba(0,212,170,0.15) 0%, rgba(96,165,250,0.1) 100%);
+  border: 1px solid rgba(0,212,170,0.25);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  display: flex; align-items: center; gap: 14px;
+}
+.hero-icon { font-size: 40px; flex-shrink: 0; }
+.hero-text h2 { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+.hero-text p  { font-size: 12px; color: var(--muted); font-weight: 500; }
+.hero-stats   { display: flex; gap: 8px; margin-top: 8px; }
+.hero-stat {
+  background: var(--card2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 3px 10px; font-size: 12px; color: var(--accent); font-weight: 700;
+}
+
+/* ── INSTALL BANNER ── */
+.install-banner {
+  margin: 12px 16px 0;
+  background: var(--card2); border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.install-banner-icon { font-size: 28px; flex-shrink: 0; }
+.install-banner-text strong { font-size: 13px; font-weight: 700; display: block; margin-bottom: 2px; }
+.install-banner-text small  { font-size: 11px; color: var(--muted); font-weight: 500; line-height: 1.4; display: block; }
+.install-close {
+  width: 26px; height: 26px; border-radius: 50%; border: none;
+  background: var(--border); color: var(--muted);
+  cursor: pointer; font-size: 11px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font);
+}
+
+/* ── DECK GRID (Home) — Anki-style table ── */
+.deck-grid {
+  padding: 4px 16px 0;
+  display: flex; flex-direction: column; gap: 0;
+}
+
+/* Anki-style table header */
+.deck-table-header {
+  display: grid;
+  grid-template-columns: 1fr 48px 48px 68px;
+  padding: 6px 14px;
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .05em;
+  border-bottom: 1px solid var(--border);
+}
+.deck-table-header span:not(:first-child) { text-align: center; }
+
+/* Anki-style deck row */
+.deck-card {
+  background: transparent;
+  border-bottom: 1px solid var(--border);
+  padding: 11px 14px;
+  display: grid;
+  grid-template-columns: 1fr 48px 48px 68px;
+  align-items: center;
+  cursor: pointer;
+  transition: background .12s;
+  position: relative;
+}
+.deck-card:first-child { border-radius: var(--r) var(--r) 0 0; }
+.deck-card:last-child { border-radius: 0 0 var(--r) var(--r); border-bottom: none; }
+.deck-card:hover { background: var(--card2); }
+.deck-card:active { background: rgba(0,212,170,0.06); }
+
+/* Remove old ::after progress bar */
+.deck-card::after { display: none; }
+
+.deck-card-name {
+  display: flex; align-items: center; gap: 10px;
+}
+.deck-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.deck-body { flex: 1; min-width: 0; }
+.deck-name {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.deck-meta { font-size: 11px; color: var(--muted); font-weight: 500; margin-top: 1px; }
+.deck-prog-wrap { display: none; }
+.deck-col {
+  text-align: center; font-size: 13px; font-weight: 700; color: var(--muted);
+}
+.deck-col.due { color: #4ADE80; font-weight: 700; }
+.deck-col.due.overdue { color: #F87171; }
+.deck-col.due.zero { color: var(--muted); }
+.deck-know-badge { display: none; }
+.deck-chevron { display: none; }
+
+/* The deck table wrapper */
+.deck-table-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin: 0;
+}
+
+/* ── MANAGE PAGE DECK CARD ── */
+.manage-deck-card {
+  background: var(--card2);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 12px;
+  transition: background .12s;
+}
+.manage-deck-card:active { background: rgba(0,212,170,0.06); }
+.manage-deck-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.icon-btn {
+  width: 34px; height: 34px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card); cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font); transition: all .15s;
+}
+.icon-btn:active { background: var(--accent-l); border-color: var(--accent); }
+
+/* ADD DECK BTN */
+.add-deck-btn {
+  margin: 10px 16px 0;
+  width: calc(100% - 32px);
+  padding: 14px; border-radius: var(--r-lg);
+  border: 1px dashed var(--border);
+  background: transparent; font-family: var(--font);
+  font-size: 14px; font-weight: 700; color: var(--muted);
+  cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.add-deck-btn:hover, .add-deck-btn:active {
+  border-color: var(--accent); color: var(--accent);
+  background: var(--accent-l);
+}
+
+/* ── BACKUP SECTION ── */
+.backup-section {
+  margin: 12px 16px 0;
+  background: var(--card); border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  padding: 14px; box-shadow: var(--shadow);
+}
+.backup-title {
+  font-size: 12px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .06em;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+}
+.backup-btns { display: flex; gap: 8px; }
+.backup-btn {
+  flex: 1; padding: 10px 8px; border-radius: 10px;
+  border: none; font-family: var(--font);
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: opacity .15s;
+}
+.backup-btn:active { opacity: .7; }
+.backup-export { background: var(--teal-l);   color: var(--teal); border: 1px solid rgba(0,212,170,0.3); }
+.backup-import { background: var(--blue-l);   color: var(--blue); border: 1px solid rgba(96,165,250,0.3); }
+.backup-info { font-size: 11px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+#importFile { display: none; }
+
+/* ── MODALS ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7); z-index: 200;
+  align-items: flex-end; justify-content: center;
+}
+.overlay.open { display: flex; animation: overlayIn .2s ease; }
+@keyframes overlayIn { from{opacity:0} to{opacity:1} }
+
+.modal {
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--border);
+  padding: 8px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  width: 100%; max-width: 640px;
+  max-height: 90vh; overflow-y: auto;
+  animation: sheetUp .3s cubic-bezier(.34,1.1,.64,1) both;
+}
+@keyframes sheetUp { from{transform:translateY(100%)} to{transform:none} }
+
+.modal-handle {
+  width: 36px; height: 4px; border-radius: 4px;
+  background: var(--border); margin: 10px auto 16px;
+}
+.modal-title { font-size: 17px; font-weight: 800; margin-bottom: 16px; }
+
+/* ── FORM ELEMENTS ── */
+.form-group { margin-bottom: 14px; }
+.form-label {
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .06em;
+  display: block; margin-bottom: 6px;
+}
+.form-input {
+  width: 100%; padding: 11px 14px;
+  border-radius: 10px; border: 1px solid var(--border);
+  background: var(--card2); font-family: var(--font);
+  font-size: 14px; font-weight: 500; color: var(--text);
+  outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,212,170,0.15);
+}
+.form-input::placeholder { color: var(--muted); }
+
+/* Color picker */
+.color-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.color-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  cursor: pointer; border: 2px solid transparent;
+  transition: transform .15s, box-shadow .15s;
+  position: relative;
+}
+.color-dot.selected {
+  border-color: var(--text); transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+.color-dot.selected::after {
+  content: '✓'; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 13px; font-weight: 800;
+}
+
+/* Buttons */
+.modal-btns { display: flex; gap: 8px; margin-top: 4px; }
+.btn {
+  flex: 1; padding: 13px; border-radius: 12px;
+  font-family: var(--font); font-size: 14px; font-weight: 700;
+  cursor: pointer; border: none; transition: transform .1s, opacity .15s;
+}
+.btn:active { transform: scale(.96); opacity: .85; }
+.btn-primary   { background: var(--accent); color: #111318; box-shadow: 0 4px 14px rgba(0,212,170,0.3); }
+.btn-secondary { background: var(--card2); color: var(--text); border: 1px solid var(--border); }
+.btn-danger    { background: rgba(248,113,113,0.15); color: var(--coral); border: 1px solid rgba(248,113,113,0.3); }
+
+/* ── IMAGE UPLOAD ── */
+.img-upload-area {
+  border: 1px dashed var(--border); border-radius: 12px;
+  padding: 16px; text-align: center; cursor: pointer;
+  transition: all .15s; position: relative; overflow: hidden;
+  background: var(--card2);
+}
+.img-upload-area:hover { border-color: var(--accent); background: var(--accent-l); }
+.img-preview { width:100%; max-height:180px; object-fit:cover; border-radius:8px; display:none; }
+.img-upload-hint { font-size:12px; color:var(--muted); font-weight:600; }
+.img-upload-hint span { font-size:28px; display:block; margin-bottom:6px; }
+.img-clear-btn {
+  position:absolute; top:10px; right:10px; width:26px; height:26px;
+  background:rgba(0,0,0,.6); color:#fff; border:none; border-radius:50%;
+  cursor:pointer; font-size:12px; display:none;
+  align-items:center; justify-content:center; z-index:2;
+}
+#imgFile { display:none; }
+
+/* ── WORD LIST ── */
+.word-list { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
+.word-item {
+  background:var(--card2); border-radius:10px;
+  border:1px solid var(--border);
+  padding:9px 12px; display:flex; align-items:center; gap:10px;
+}
+.word-thumb {
+  width:40px; height:40px; border-radius:8px; flex-shrink:0;
+  background:var(--card); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; overflow:hidden;
+}
+.word-thumb img { width:100%; height:100%; object-fit:cover; }
+.word-body { flex:1; min-width:0; }
+.word-en { font-size:13px; font-weight:700; margin-bottom:2px; }
+.word-vn { font-size:11px; color:var(--muted); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.word-actions { display:flex; gap:5px; }
+
+/* ── STUDY PAGE ── */
+#page-study { padding-bottom: 16px; }
+.study-topbar {
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.back-btn {
+  width: 38px; height: 38px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--card2);
+  cursor: pointer; font-size: 18px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s; color: var(--text);
+}
+.back-btn:active { background: var(--border); }
+.study-deck-name { font-size: 14px; font-weight: 700; flex: 1; }
+
+/* Progress bar */
+.prog-wrap { padding: 0 16px 12px; }
+.prog-track {
+  height: 6px; background: var(--border); border-radius: 6px; overflow: hidden;
+}
+.prog-fill { height: 100%; border-radius: 6px; transition: width .4s ease; background: var(--accent); }
+.prog-meta { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); font-weight:600; margin-bottom:5px; }
+
+/* Score pills */
+.score-row { display:flex; gap:6px; padding: 0 16px 12px; }
+.score-pill {
+  font-size:12px; font-weight:700; padding:5px 12px;
+  border-radius:20px; display:flex; align-items:center; gap:4px;
+}
+
+/* Flashcard */
+.card-stage {
+  margin: 0 16px 12px;
+  perspective: 1000px;
+  height: 250px; cursor: pointer; user-select: none;
+  animation: cardIn .35s cubic-bezier(.34,1.2,.64,1) both;
+}
+@keyframes cardIn { from{opacity:0;transform:scale(.88) translateY(16px)} to{opacity:1;transform:none} }
+
+.card-inner {
+  width: 100%; height: 100%; position: relative;
+  transform-style: preserve-3d;
+  transition: transform .5s cubic-bezier(.4,0,.2,1);
+}
+.card-inner.flipped { transform: rotateY(180deg); }
+
+.card-face {
+  position: absolute; inset: 0;
+  border-radius: 16px;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 22px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.3), 0 0 0 1px var(--border);
+  overflow: hidden;
+}
+.card-front { background: var(--card2); }
+.card-back {
+  transform: rotateY(180deg);
+  color: #fff;
+}
+
+.card-badge {
+  position: absolute; top: 12px; left: 12px;
+  font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; padding: 3px 10px; border-radius: 20px;
+}
+.card-num { position: absolute; top: 12px; right: 12px; font-size: 11px; color: var(--muted); font-weight: 600; }
+.card-img {
+  width: 64px; height: 64px; border-radius: 12px;
+  object-fit: cover; margin-bottom: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+}
+.card-word { font-size: 26px; font-weight: 800; text-align: center; margin-bottom: 6px; line-height: 1.2; }
+.card-ph { font-size: 12px; color: var(--muted); text-align: center; font-weight: 500; }
+.card-hint { position: absolute; bottom: 12px; font-size: 11px; color: var(--muted); font-weight: 600; }
+.card-vn { font-size: 20px; font-weight: 800; text-align: center; margin-bottom: 8px; line-height: 1.3; }
+.card-ex { font-size: 12px; text-align: center; line-height: 1.6; font-style: italic; opacity: .75; font-weight: 500; }
+
+/* ── STUDY MODE SELECTOR ── */
+.study-mode-bar {
+  display: flex; gap: 6px; padding: 0 16px 12px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.study-mode-bar::-webkit-scrollbar { display: none; }
+.mode-btn {
+  flex-shrink: 0; padding: 7px 14px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--card2);
+  font-family: var(--font); font-size: 12px; font-weight: 700;
+  color: var(--muted); cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.mode-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: #111318; box-shadow: 0 2px 10px rgba(0,212,170,0.3);
+}
+
+/* ── DIRECTION TOGGLE ── */
+.dir-toggle {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 16px 10px;
+}
+.dir-label { font-size: 11px; font-weight: 700; color: var(--muted); }
+.dir-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--card2);
+  font-family: var(--font); font-size: 12px; font-weight: 700;
+  color: var(--muted); cursor: pointer; transition: all .15s;
+}
+.dir-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-l); }
+.dir-sep { color: var(--border); font-size: 14px; }
+
+/* ── FILL-IN-THE-BLANK ── */
+.fill-card {
+  margin: 0 16px 12px;
+  background: var(--card2); border-radius: 16px;
+  border: 1px solid var(--border);
+  padding: 24px 18px 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.3);
+  animation: cardIn .35s cubic-bezier(.34,1.2,.64,1) both;
+}
+.fill-prompt-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); margin-bottom: 10px;
+}
+.fill-prompt {
+  font-size: 18px; font-weight: 800; line-height: 1.5;
+  color: var(--text); margin-bottom: 18px; text-align: center;
+}
+.fill-prompt .blank {
+  display: inline-block; min-width: 80px; border-bottom: 2px solid var(--accent);
+  color: var(--accent); padding: 0 4px; font-weight: 800;
+}
+.fill-hint { font-size: 12px; color: var(--muted); font-weight: 500; text-align: center; margin-bottom: 16px; }
+
+.fill-input-wrap {
+  display: flex; gap: 8px; margin-bottom: 12px;
+}
+.fill-input {
+  flex: 1; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--card);
+  font-family: var(--font); font-size: 16px; font-weight: 600;
+  color: var(--text); outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.fill-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,212,170,0.15);
+}
+.fill-input.correct { border-color: var(--teal); background: var(--teal-l); color: var(--teal); }
+.fill-input.wrong   { border-color: var(--coral); background: var(--coral-l); color: var(--coral); }
+
+.fill-submit {
+  padding: 12px 18px; border-radius: 12px;
+  background: var(--accent); border: none; color: #111318;
+  font-family: var(--font); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all .15s; flex-shrink: 0;
+}
+.fill-submit:active { transform: scale(.95); }
+
+.fill-feedback {
+  border-radius: 12px; padding: 12px 14px;
+  font-size: 14px; font-weight: 700; text-align: center;
+  margin-bottom: 10px; display: none;
+}
+.fill-feedback.correct-fb { background: var(--teal-l);  color: var(--teal); }
+.fill-feedback.wrong-fb   { background: var(--coral-l); color: var(--coral); }
+
+.fill-answer-reveal {
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  text-align: center; margin-bottom: 10px; display: none;
+}
+.fill-answer-reveal strong { color: var(--text); font-size: 15px; }
+
+/* hint letters */
+.hint-letters {
+  display: flex; gap: 5px; justify-content: center;
+  flex-wrap: wrap; margin-bottom: 14px;
+}
+.hint-letter {
+  width: 32px; height: 40px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--card);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 800; color: var(--muted);
+  cursor: pointer; transition: all .15s; user-select: none;
+  font-family: var(--font);
+}
+.hint-letter:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-l); }
+.hint-letter.used  { opacity: .3; pointer-events: none; }
+
+/* Flip button */
+.flip-wrap { display:flex; justify-content:center; padding: 0 16px 8px; }
+.flip-btn {
+  font-family:var(--font); font-size:13px; font-weight:700;
+  background:var(--card2); border:1px solid var(--border);
+  color:var(--muted); padding:10px 24px; border-radius:12px; cursor:pointer;
+  transition: all .15s;
+}
+.flip-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+/* Action row */
+.action-row {
+  display:flex; gap:8px; padding: 0 16px;
+  opacity:0; pointer-events:none;
+  transform:translateY(8px); transition: all .2s;
+}
+.action-row.vis { opacity:1; pointer-events:all; transform:none; }
+.act-btn {
+  flex:1; padding:14px; border-radius:14px;
+  font-family:var(--font); font-size:14px; font-weight:700;
+  border:none; cursor:pointer; transition: transform .1s, opacity .15s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.act-btn:active { transform: scale(.95); }
+.btn-again { background: var(--coral-l); color: var(--coral); border: 1px solid rgba(248,113,113,0.3); }
+.btn-know  { background: var(--teal-l);  color: var(--teal);  border: 1px solid rgba(0,212,170,0.3); }
+
+/* Done box */
+.done-box {
+  margin: 0 16px;
+  background: var(--card2); border-radius: 18px;
+  border: 1px solid var(--border);
+  padding: 28px 18px; text-align: center;
+  box-shadow: var(--shadow-md);
+  animation: cardIn .5s cubic-bezier(.34,1.2,.64,1) both;
+}
+.done-trophy { font-size: 60px; display: block; margin-bottom: 8px; animation: trophyPop .6s .15s cubic-bezier(.34,1.56,.64,1) both; opacity: 0; }
+@keyframes trophyPop { from{opacity:0;transform:scale(.2) rotate(-20deg)} to{opacity:1;transform:scale(1)} }
+.done-stars  { font-size: 28px; letter-spacing: 4px; margin-bottom: 10px; display: block; }
+.done-star   { display: inline-block; animation: starPop .4s cubic-bezier(.34,1.56,.64,1) both; opacity: 0; }
+.done-star:nth-child(1){animation-delay:.35s} .done-star:nth-child(2){animation-delay:.5s} .done-star:nth-child(3){animation-delay:.65s}
+@keyframes starPop { from{opacity:0;transform:scale(0)} to{opacity:1;transform:scale(1)} }
+.done-box h2 { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+.done-box p  { color: var(--muted); font-size: 13px; font-weight: 500; line-height: 1.6; margin-bottom: 18px; }
+.done-stats  { display:flex; gap:8px; justify-content:center; margin-bottom:18px; }
+.done-stat   { background:var(--card); border-radius:12px; border:1px solid var(--border); padding:8px 18px; }
+.done-stat-num   { font-size:22px; font-weight:800; }
+.done-stat-label { font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-top:2px; }
+.done-btns { display:flex; flex-direction:column; gap:8px; }
+
+/* ── STATS PAGE ── */
+.stats-grid {
+  padding: 10px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 400px) { .stats-grid { grid-template-columns: 1fr; } }
+
+.stat-card {
+  background: var(--card); border-radius: var(--r-lg);
+  border: 1px solid var(--border); padding: 14px;
+  box-shadow: var(--shadow);
+}
+.stat-card.full { grid-column: span 2; }
+.stat-card-title {
+  font-size: 12px; font-weight: 700; color: var(--text);
+  margin-bottom: 4px;
+}
+.stat-card-sub {
+  font-size: 11px; color: var(--muted); font-weight: 500;
+  margin-bottom: 12px;
+}
+
+/* big numbers */
+.stat-big { font-size: 34px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+.stat-label { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+/* today row */
+.today-row { display: flex; gap: 6px; margin-bottom: 10px; }
+.today-pill {
+  flex: 1; background: var(--card2); border-radius: 10px;
+  border: 1px solid var(--border); padding: 8px 6px;
+  text-align: center;
+}
+.today-pill .num  { font-size: 20px; font-weight: 800; }
+.today-pill .lbl  { font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+
+/* bar chart */
+.bar-chart { display: flex; align-items: flex-end; gap: 3px; height: 70px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.bar-fill {
+  width: 100%; border-radius: 3px 3px 0 0;
+  min-height: 2px; transition: height .4s ease;
+}
+.bar-lbl { font-size: 9px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+
+/* pie / donut */
+.donut-wrap { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+.donut-svg { flex-shrink: 0; }
+.donut-legend { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.legend-row { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend-pct { margin-left: auto; color: var(--muted); }
+
+/* heatmap calendar */
+.heatmap { display: flex; flex-direction: column; gap: 3px; margin-top: 8px; overflow-x: auto; }
+.heatmap-row { display: flex; gap: 3px; }
+.heatmap-cell {
+  width: 13px; height: 13px; border-radius: 2px;
+  flex-shrink: 0;
+}
+.heatmap-months { display: flex; gap: 3px; margin-bottom: 2px; }
+.heatmap-month-lbl { font-size: 9px; color: var(--muted); font-weight: 600; }
+
+/* streak */
+.streak-row { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+.streak-fire { font-size: 30px; }
+.streak-info .big { font-size: 26px; font-weight: 800; }
+.streak-info .sub { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+/* retention table */
+.ret-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+.ret-table th { color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 6px; text-align: left; border-bottom: 1px solid var(--border); }
+.ret-table td { padding: 6px 6px; font-weight: 600; border-bottom: 1px solid var(--border); }
+.ret-table tr:last-child td { border-bottom: none; }
+.ret-good { color: var(--teal); }
+.ret-bad  { color: var(--coral); }
+
+/* period tabs */
+.period-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+.period-tab {
+  padding: 4px 10px; border-radius: 14px; border: none;
+  font-family: var(--font); font-size: 11px; font-weight: 700;
+  cursor: pointer; background: var(--card2); color: var(--muted); transition: all .15s;
+}
+.period-tab.active { background: var(--accent); color: #111318; }
+
+/* ── SETTINGS PAGE ── */
+.settings-section {
+  margin: 10px 16px 0;
+  background:var(--card); border-radius:var(--r-lg);
+  border:1px solid var(--border);
+  padding:14px; box-shadow:var(--shadow);
+}
+.settings-section-title {
+  font-size:11px; font-weight:700; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.06em; margin-bottom:12px;
+}
+.theme-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.theme-btn {
+  border-radius:12px; padding:10px 6px; border:2px solid transparent;
+  cursor:pointer; text-align:center; font-family:var(--font); transition:all .15s;
+}
+.theme-btn.selected { border-color:var(--accent); }
+.theme-preview { width:100%; height:32px; border-radius:7px; margin-bottom:5px; display:flex; align-items:center; justify-content:center; gap:4px; }
+.theme-name { font-size:11px; font-weight:700; }
+.accent-grid { display:flex; gap:8px; flex-wrap:wrap; }
+.accent-btn {
+  width:36px; height:36px; border-radius:50%;
+  border:3px solid transparent; cursor:pointer; transition:transform .15s;
+  position: relative;
+}
+.accent-btn.selected { border-color:var(--text); transform:scale(1.15); }
+.accent-btn.selected::after { content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; font-weight:800; }
+.font-grid { display:flex; flex-direction:column; gap:6px; }
+.font-btn {
+  padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+  background:var(--card2); cursor:pointer; text-align:left; transition:all .15s;
+  font-family: var(--font);
+}
+.font-btn.selected { border-color:var(--accent); background:var(--accent-l); }
+.font-btn .font-name { font-size:13px; font-weight:700; color:var(--text); }
+.font-btn .font-sample { font-size:11px; color:var(--muted); margin-top:2px; font-weight:500; }
+.settings-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:11px 0; border-bottom:1px solid var(--border);
+}
+.settings-row:last-child { border-bottom:none; padding-bottom:0; }
+.settings-row-label { font-size:13px; font-weight:700; }
+.settings-row-sub   { font-size:11px; color:var(--muted); font-weight:500; margin-top:2px; }
+.toggle {
+  width:46px; height:26px; border-radius:13px;
+  background:var(--border); position:relative;
+  cursor:pointer; border:none; transition:background .2s; flex-shrink:0;
+}
+.toggle.on { background:var(--accent); }
+.toggle::after {
+  content:''; position:absolute; top:3px; left:3px;
+  width:20px; height:20px; border-radius:50%; background:#fff;
+  transition:transform .2s; box-shadow:0 1px 4px rgba(0,0,0,.3);
+}
+.toggle.on::after { transform:translateX(20px); }
+
+/* ── EMPTY STATE ── */
+.empty-state { text-align:center; padding:36px 16px; }
+.empty-icon  { font-size:48px; margin-bottom:10px; }
+.empty-state p { font-size:13px; font-weight:600; color:var(--muted); line-height:1.6; }
+
+/* ── CONFETTI ── */
+#celebration { position:fixed; inset:0; z-index:500; pointer-events:none; overflow:hidden; }
+.confetti-piece {
+  position:absolute; width:10px; height:10px; border-radius:2px;
+  animation:confettiFall linear both;
+}
+@keyframes confettiFall {
+  0%  { transform:translateY(-20px) rotate(0deg) scale(1); opacity:1; }
+  80% { opacity:1; }
+  100%{ transform:translateY(110vh) rotate(720deg) scale(.5); opacity:0; }
+}
+.firework { position:absolute; width:6px; height:6px; border-radius:50%; animation:fireworkBurst .8s ease-out both; }
+@keyframes fireworkBurst { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{opacity:0} }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed; bottom:calc(var(--bnav) + env(safe-area-inset-bottom,0px) + 12px);
+  left:50%; transform:translateX(-50%) translateY(12px);
+  background: var(--card); color:var(--text);
+  border: 1px solid var(--border);
+  padding:9px 18px; border-radius:20px;
+  font-size:13px; font-weight:700; opacity:0; transition:all .3s;
+  z-index:999; white-space:nowrap; pointer-events:none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ── DESKTOP ── */
+@media (min-width: 640px) {
+  .page, .header { max-width: 640px; margin: 0 auto; }
+  .header { left: 50%; transform: translateX(-50%); position: sticky; }
+}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo-wrap">📚</div>
+  <div class="splash-name">KOIF</div>
+  <div class="splash-sub">Học từ vựng mỗi ngày</div>
+  <div class="splash-dots"><span></span><span></span><span></span></div>
+</div>
+
+<!-- CONFETTI -->
+<div id="celebration"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo"><span class="k">K</span><span class="oif">OIF</span> 📚</div>
+  <div id="syncBadge" class="sync-badge" style="background:var(--amber-l);color:var(--amber-d)">⏳ Đang kết nối...</div>
+</header>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div id="heroBanner" class="hero-banner">
+    <div class="hero-icon">🔥</div>
+    <div class="hero-text">
+      <h2>Học ngay hôm nay!</h2>
+      <p>Chọn một bộ thẻ để bắt đầu</p>
+      <div class="hero-stats">
+        <div class="hero-stat" id="heroStatDecks">0 bộ thẻ</div>
+        <div class="hero-stat" id="heroStatWords">0 từ</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="installBanner" style="display:none">
+    <div class="install-banner">
+      <div class="install-banner-icon">📲</div>
+      <div class="install-banner-text">
+        <strong>Cài app lên màn hình chính!</strong>
+        <small id="installHint"></small>
+      </div>
+      <button class="install-close" onclick="dismissInstall()">✕</button>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <div>
+      <div class="section-title">Bộ thẻ của bạn</div>
+      <div class="section-sub">Nhấn để bắt đầu học</div>
+    </div>
+  </div>
+  <div style="padding: 0 16px">
+    <div class="deck-table-wrap">
+      <div class="deck-table-header">
+        <span>Bộ thẻ</span>
+        <span>Mới</span>
+        <span>Học</span>
+        <span>Đến hạn</span>
+      </div>
+      <div id="deckListHome"></div>
+    </div>
+  </div>
+  <div style="text-align:center;padding:14px 16px 4px;font-size:12px;color:var(--muted);font-weight:500" id="homeStatBar">Đã học 0 thẻ trong 0 giây hôm nay (0giây/thẻ)</div>
+</div>
+
+<!-- MANAGE PAGE -->
+<div class="page" id="page-manage">
+  <div class="section-head">
+    <div class="section-title">Quản lý</div>
+  </div>
+
+  <div class="backup-section">
+    <div class="backup-title">☁️ Sao lưu dữ liệu</div>
+    <div class="backup-btns">
+      <button class="backup-btn backup-export" onclick="exportBackup()">⬇️ Xuất backup</button>
+      <button class="backup-btn backup-import" onclick="document.getElementById('importFile').click()">⬆️ Nhập backup</button>
+    </div>
+    <div class="backup-info" id="backupInfo">Chưa có thông tin backup</div>
+    <input type="file" id="importFile" accept=".json" onchange="importBackup(event)">
+  </div>
+
+  <div class="section-head" style="padding-top:16px">
+    <div>
+      <div class="section-title">Bộ thẻ</div>
+      <div class="section-sub">Tạo, chỉnh sửa, xóa</div>
+    </div>
+  </div>
+  <div class="deck-grid" id="deckListManage"></div>
+  <button class="add-deck-btn" onclick="openAddDeck()">
+    <span style="font-size:20px">＋</span> Tạo bộ thẻ mới
+  </button>
+</div>
+
+<!-- SETTINGS PAGE -->
+<div class="page" id="page-settings">
+  <div class="section-head"><div class="section-title">Cài đặt</div></div>
+  <div class="settings-section">
+    <div class="settings-section-title">🌗 Giao diện</div>
+    <div class="theme-grid" id="themeGrid"></div>
+  </div>
+  <div class="settings-section">
+    <div class="settings-section-title">🎨 Màu chủ đạo</div>
+    <div class="accent-grid" id="accentGrid"></div>
+  </div>
+  <div class="settings-section">
+    <div class="settings-section-title">🔤 Font chữ</div>
+    <div class="font-grid" id="fontGrid"></div>
+  </div>
+  <div class="settings-section">
+    <div class="settings-section-title">⚙️ Tuỳ chọn</div>
+    <div class="settings-row">
+      <div><div class="settings-row-label">Hoạt ảnh thẻ</div><div class="settings-row-sub">Hiệu ứng lật thẻ mượt</div></div>
+      <button class="toggle on" id="toggleAnim" onclick="toggleSetting('anim')"></button>
+    </div>
+    <div class="settings-row">
+      <div><div class="settings-row-label">Hiển thị phiên âm</div><div class="settings-row-sub">IPA mặt trước thẻ</div></div>
+      <button class="toggle on" id="togglePhonetic" onclick="toggleSetting('phonetic')"></button>
+    </div>
+    <div class="settings-row">
+      <div><div class="settings-row-label">Hỏi tiếp tục</div><div class="settings-row-sub">Hỏi khi mở bộ thẻ đã học</div></div>
+      <button class="toggle on" id="toggleAskResume" onclick="toggleSetting('askResume')"></button>
+    </div>
+  </div>
+  <div style="text-align:center;padding:16px 0 4px;color:var(--muted);font-size:12px;font-weight:700">Thay đổi được lưu tự động ✓</div>
+</div>
+
+<!-- STUDY PAGE -->
+<div class="page" id="page-study">
+  <div class="study-topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <div class="study-deck-name" id="studyTitle"></div>
+  </div>
+
+  <!-- MODE SELECTOR -->
+  <div class="study-mode-bar">
+    <button class="mode-btn active" id="modeFlash" onclick="setStudyMode('flash')">🃏 Lật thẻ</button>
+    <button class="mode-btn" id="modeFill"  onclick="setStudyMode('fill')">✍️ Điền từ</button>
+  </div>
+
+  <!-- DIRECTION TOGGLE -->
+  <div class="dir-toggle">
+    <span class="dir-label">Chiều học:</span>
+    <button class="dir-btn active" id="dirEN" onclick="setDirection('en')">🇬🇧 → 🇻🇳</button>
+    <button class="dir-btn" id="dirVI" onclick="setDirection('vi')">🇻🇳 → 🇬🇧</button>
+  </div>
+
+  <div class="prog-wrap">
+    <div class="prog-meta"><span id="progLabel">Thẻ 1/1</span><span id="progPct">0%</span></div>
+    <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+  <div class="score-row">
+    <div class="score-pill" style="background:var(--teal-l);color:var(--teal-d)">✓ <span id="sKnow">0</span> biết</div>
+    <div class="score-pill" style="background:var(--coral-l);color:var(--coral-d)">↺ <span id="sAgain">0</span> ôn</div>
+    <div class="score-pill" style="background:var(--bg);color:var(--muted);border:2px solid var(--border)"><span id="sLeft">0</span> còn</div>
+  </div>
+  <div id="studyArea"></div>
+  <div class="flip-wrap" id="flipWrap">
+    <button class="flip-btn" onclick="flipCard()">↕ Nhấn để xem nghĩa</button>
+  </div>
+  <div class="action-row" id="actionRow">
+    <button class="act-btn btn-again" onclick="markAgain()">↺ Ôn lại</button>
+    <button class="act-btn btn-know" onclick="markKnow()">✓ Đã biết</button>
+  </div>
+</div>
+
+<!-- STATS PAGE -->
+<div class="page" id="page-stats">
+  <div class="section-head">
+    <div class="section-title">📊 Thống kê</div>
+  </div>
+
+  <!-- TODAY -->
+  <div class="stats-grid">
+    <div class="stat-card full">
+      <div class="stat-card-title">🌅 Hôm nay</div>
+      <div class="stat-card-sub">Tiến độ học trong ngày</div>
+      <div class="today-row">
+        <div class="today-pill">
+          <div class="num" id="todayStudied" style="color:var(--accent)">0</div>
+          <div class="lbl">Đã học</div>
+        </div>
+        <div class="today-pill">
+          <div class="num" id="todayCorrect" style="color:var(--teal-d)">0</div>
+          <div class="lbl">Đúng</div>
+        </div>
+        <div class="today-pill">
+          <div class="num" id="todayWrong" style="color:var(--coral-d)">0</div>
+          <div class="lbl">Sai</div>
+        </div>
+        <div class="today-pill">
+          <div class="num" id="todayRate" style="color:var(--purple-d)">—</div>
+          <div class="lbl">Tỉ lệ đúng</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STREAK -->
+    <div class="stat-card">
+      <div class="stat-card-title">🔥 Chuỗi ngày học</div>
+      <div class="streak-row">
+        <div class="streak-fire">🔥</div>
+        <div class="streak-info">
+          <div class="big" id="streakDays">0</div>
+          <div class="sub">ngày liên tiếp</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted);font-weight:700">
+        Tổng ngày học: <span id="totalDays" style="color:var(--text)">0</span>
+      </div>
+    </div>
+
+    <!-- TOTAL STATS -->
+    <div class="stat-card">
+      <div class="stat-card-title">📚 Tổng quan</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800">
+          <span style="color:var(--muted)">Tổng từ đã học</span>
+          <span id="totalStudied">0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800">
+          <span style="color:var(--muted)">Tổng lần đúng</span>
+          <span style="color:var(--teal-d)" id="totalCorrect">0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800">
+          <span style="color:var(--muted)">Tổng lần sai</span>
+          <span style="color:var(--coral-d)" id="totalWrong">0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800">
+          <span style="color:var(--muted)">Tỉ lệ đúng chung</span>
+          <span style="color:var(--accent)" id="totalRate">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7-DAY BAR CHART -->
+    <div class="stat-card full">
+      <div class="stat-card-title">📅 Hoạt động 7 ngày qua</div>
+      <div class="stat-card-sub">Số từ học mỗi ngày</div>
+      <div class="bar-chart" id="weekBarChart"></div>
+      <div style="display:flex;gap:8px;margin-top:8px;font-size:11px;font-weight:700">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block"></span>Đúng</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:var(--coral);display:inline-block"></span>Sai</span>
+      </div>
+    </div>
+
+    <!-- DONUT PER DECK -->
+    <div class="stat-card full">
+      <div class="stat-card-title">🗂️ Tiến độ theo bộ thẻ</div>
+      <div class="stat-card-sub">% từ đã nhớ mỗi bộ thẻ</div>
+      <div id="deckProgressList" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
+    </div>
+
+    <!-- CALENDAR HEATMAP -->
+    <div class="stat-card full">
+      <div class="stat-card-title">📆 Lịch học (3 tháng)</div>
+      <div class="stat-card-sub">Số từ học mỗi ngày – càng đậm càng nhiều</div>
+      <div class="heatmap" id="heatmapGrid"></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;font-weight:700;color:var(--muted)">
+        Ít
+        <span style="display:flex;gap:3px">
+          <span style="width:12px;height:12px;border-radius:3px;background:var(--border);display:inline-block"></span>
+          <span style="width:12px;height:12px;border-radius:3px;background:color-mix(in srgb,var(--accent) 30%,transparent);display:inline-block"></span>
+          <span style="width:12px;height:12px;border-radius:3px;background:color-mix(in srgb,var(--accent) 60%,transparent);display:inline-block"></span>
+          <span style="width:12px;height:12px;border-radius:3px;background:var(--accent);display:inline-block"></span>
+        </span>
+        Nhiều
+      </div>
+    </div>
+
+    <!-- RETENTION TABLE -->
+    <div class="stat-card full">
+      <div class="stat-card-title">🎯 Tỉ lệ ghi nhớ</div>
+      <div class="stat-card-sub">Theo từng khoảng thời gian</div>
+      <table class="ret-table">
+        <thead><tr><th>Thời gian</th><th>Đã học</th><th>Đúng</th><th>Tỉ lệ</th></tr></thead>
+        <tbody id="retentionTable"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <button class="bnav-btn active" onclick="showPage('home')" id="bnav-home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Trang chủ</span>
+  </button>
+  <button class="bnav-btn" onclick="showPage('manage')" id="bnav-manage">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Quản lý</span>
+  </button>
+  <button class="bnav-btn" onclick="showPage('stats')" id="bnav-stats">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <span>Thống kê</span>
+  </button>
+  <button class="bnav-btn" onclick="showPage('settings')" id="bnav-settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+    <span>Cài đặt</span>
+  </button>
+</nav>
+
+<!-- DECK MODAL -->
+<div class="overlay" id="deckModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="deckModalTitle">Tạo bộ thẻ mới</div>
+    <div class="form-group">
+      <label class="form-label">Tên bộ thẻ</label>
+      <input class="form-input" id="deckName" placeholder="VD: Tiếng Anh IT, Từ vựng y tế...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Biểu tượng</label>
+      <input class="form-input" id="deckEmoji" placeholder="Nhập emoji VD: 🏥 💻 🌿" maxlength="4">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Màu sắc</label>
+      <div class="color-row" id="colorRow"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('deckModal')">Huỷ</button>
+      <button class="btn btn-primary" onclick="saveDeck()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- WORD MODAL -->
+<div class="overlay" id="wordModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="wordModalTitle">Thêm từ mới</div>
+    <div class="form-group">
+      <label class="form-label">Từ / Thuật ngữ *</label>
+      <input class="form-input" id="wordEn" placeholder="VD: Calibration, こんにちは, 안녕...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Phiên âm</label>
+      <input class="form-input" id="wordPh" placeholder="VD: /ˌkælɪˈbreɪʃən/">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nghĩa / Đáp án *</label>
+      <input class="form-input" id="wordVn" placeholder="VD: Hiệu chuẩn">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Câu ví dụ</label>
+      <input class="form-input" id="wordEx" placeholder="VD: Annual calibration is required.">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Hình ảnh (tuỳ chọn)</label>
+      <div class="img-upload-area" id="imgUploadArea" onclick="document.getElementById('imgFile').click()">
+        <img class="img-preview" id="imgPreview" alt="">
+        <button class="img-clear-btn" id="imgClearBtn" onclick="event.stopPropagation();clearImage()">✕</button>
+        <div class="img-upload-hint" id="imgHint"><span>🖼️</span>Chọn ảnh từ thiết bị</div>
+      </div>
+      <input type="file" id="imgFile" accept="image/*" onchange="handleImageUpload(event)">
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('wordModal')">Huỷ</button>
+      <button class="btn btn-primary" onclick="saveWord()">Lưu từ</button>
+    </div>
+  </div>
+</div>
+
+<!-- DECK DETAIL MODAL -->
+<div class="overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-title" id="detailTitle" style="margin:0"></div>
+      <button class="icon-btn" onclick="openAddWord()" style="font-size:20px;font-weight:900;width:40px;height:40px">＋</button>
+    </div>
+    <div id="detailWordList"></div>
+    <div class="modal-btns" style="margin-top:10px">
+      <button class="btn btn-danger" onclick="confirmDeleteDeck()">🗑 Xoá bộ thẻ</button>
+      <button class="btn btn-secondary" onclick="closeModal('detailModal')">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="confirmTitle">Xác nhận</div>
+    <p id="confirmMsg" style="color:var(--muted);font-size:14px;font-weight:600;margin-bottom:20px;line-height:1.6"></p>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('confirmModal')">Huỷ</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Xoá</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   KOIF – JavaScript (full logic, unchanged from original)
+   ============================================================ */
+const COLORS = [
+  { name:"teal",   bg:"#00D4AA", light:"rgba(0,212,170,0.15)",   dark:"#00A882" },
+  { name:"purple", bg:"#A78BFA", light:"rgba(167,139,250,0.15)", dark:"#7C3AED" },
+  { name:"blue",   bg:"#60A5FA", light:"rgba(96,165,250,0.15)",  dark:"#2563EB" },
+  { name:"amber",  bg:"#FBBF24", light:"rgba(251,191,36,0.15)",  dark:"#D97706" },
+  { name:"coral",  bg:"#F87171", light:"rgba(248,113,113,0.15)", dark:"#DC2626" },
+  { name:"pink",   bg:"#F472B6", light:"rgba(244,114,182,0.15)", dark:"#DB2777" },
+  { name:"green",  bg:"#4ADE80", light:"rgba(74,222,128,0.15)",  dark:"#16A34A" },
+];
+
+// ── IndexedDB ──
+const DB_NAME="flashcardDB", DB_VER=1, STORE="appData";
+function openDB() {
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open(DB_NAME,DB_VER);
+    req.onupgradeneeded=e=>e.target.result.createObjectStore(STORE);
+    req.onsuccess=e=>res(e.target.result); req.onerror=()=>rej(req.error);
+  });
+}
+async function dbGet(key) {
+  try { const db=await openDB(); return new Promise((res,rej)=>{ const r=db.transaction(STORE,"readonly").objectStore(STORE).get(key); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+  catch(e){return null;}
+}
+async function dbSet(key,val) {
+  try { const db=await openDB(); return new Promise((res,rej)=>{ const tx=db.transaction(STORE,"readwrite"); tx.objectStore(STORE).put(val,key); tx.oncomplete=()=>res(true); tx.onerror=()=>rej(tx.error); }); }
+  catch(e){return false;}
+}
+
+// ── Data ──
+async function loadData() {
+  if(window.fbReady){
+    try {
+      const remote=await window.fbLoad();
+      if(remote){
+        const local=await loadLocalData();
+        if(local&&local.words){
+          Object.keys(local.words).forEach(id=>{
+            if(remote.words&&remote.words[id]) remote.words[id]=remote.words[id].map(w=>{const lw=local.words[id]&&local.words[id].find(x=>x.id===w.id); return lw?{...w,img:lw.img}:w;});
+          });
+        }
+        await dbSet("fcData",remote); setSyncBadge("ok"); return remote;
+      }
+    } catch(e){}
+  }
+  return await loadLocalData();
+}
+async function loadLocalData() {
+  try { const d=await dbGet("fcData"); if(d) return d; } catch(e){}
+  try { const s=localStorage.getItem("fcData"); if(s) return JSON.parse(s); } catch(e){}
+  return {decks:[],words:{}};
+}
+async function saveData(d) {
+  await dbSet("fcData",d);
+  try{localStorage.setItem("fcData",JSON.stringify(d));}catch(e){}
+  showToast("✓ Đã lưu");
+  if(window.fbReady){ setSyncBadge("syncing"); const ok=await window.fbSave(d); setSyncBadge(ok?"ok":"local"); }
+  else setSyncBadge("local");
+}
+function setSyncBadge(s) {
+  const el=document.getElementById("syncBadge"); if(!el) return;
+  if(s==="ok")      {el.style.background="var(--teal-l)";  el.style.color="var(--teal-d)";  el.textContent="☁️ Đã đồng bộ";}
+  if(s==="syncing") {el.style.background="var(--amber-l)"; el.style.color="var(--amber-d)"; el.textContent="⏳ Đang lưu...";}
+  if(s==="local")   {el.style.background="var(--coral-l)"; el.style.color="var(--coral-d)"; el.textContent="📱 Lưu cục bộ";}
+}
+window.addEventListener("fbReady",async()=>{ setSyncBadge("syncing"); await loadData(); setSyncBadge("ok"); renderHome(); });
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg) {
+  const el=document.getElementById("toast"); el.textContent=msg; el.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),1800);
+}
+
+// ── Seed ──
+async function seedDefault() {
+  const d=await loadData();
+  if(d.decks.length===0){
+    const id="deck_default";
+    d.decks.push({id,name:"Hiệu Chuẩn & Quan Trắc",emoji:"⚙️",color:"teal"});
+    d.words[id]=[
+      {id:"w1",en:"Calibration",ph:"/ˌkælɪˈbreɪʃən/",vn:"Hiệu chuẩn",ex:"Annual calibration is required.",img:null},
+      {id:"w2",en:"Accuracy",ph:"/ˈækjərəsi/",vn:"Độ chính xác",ex:"This device has ±0.1% accuracy.",img:null},
+      {id:"w3",en:"Uncertainty",ph:"/ʌnˈsɜːtənti/",vn:"Độ không đảm bảo đo",ex:"Report the measurement uncertainty.",img:null},
+      {id:"w4",en:"Traceability",ph:"/ˌtreɪsəˈbɪlɪti/",vn:"Liên kết chuẩn",ex:"Traceability to national standards.",img:null},
+      {id:"w5",en:"Tolerance",ph:"/ˈtɒlərəns/",vn:"Dung sai",ex:"The reading is within tolerance.",img:null},
+      {id:"w6",en:"Drift",ph:"/drɪft/",vn:"Độ trôi",ex:"Sensor drift occurs over time.",img:null},
+      {id:"w7",en:"Sensor",ph:"/ˈsɛnsər/",vn:"Cảm biến",ex:"Install the temperature sensor first.",img:null},
+      {id:"w8",en:"Humidity",ph:"/hjuːˈmɪdɪti/",vn:"Độ ẩm",ex:"Humidity is measured in percent.",img:null},
+    ];
+    await saveData(d);
+  }
+}
+
+// ── PWA Install ──
+let deferredPrompt=null;
+window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); deferredPrompt=e; showInstallBanner(); });
+function showInstallBanner() {
+  if(localStorage.getItem("installDismissed")) return;
+  const banner=document.getElementById("installBanner");
+  const hint=document.getElementById("installHint");
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(isIOS){hint.textContent='Nhấn nút Chia sẻ ⬆ → "Thêm vào Màn hình chính"'; banner.style.display="block";}
+  else if(deferredPrompt){
+    hint.textContent="Cài app để dùng offline, nhanh hơn trình duyệt";
+    banner.style.display="block";
+    banner.querySelector(".install-banner").style.cursor="pointer";
+    banner.querySelector(".install-banner").onclick=async e=>{ if(e.target.classList.contains("install-close")) return; deferredPrompt.prompt(); const{outcome}=await deferredPrompt.userChoice; if(outcome==="accepted") dismissInstall(); };
+  } else {
+    const isSafari=/safari/i.test(navigator.userAgent)&&!/chrome/i.test(navigator.userAgent);
+    if(isSafari){hint.textContent='Nhấn nút Chia sẻ ⬆ → "Thêm vào Màn hình chính"'; banner.style.display="block";}
+  }
+}
+function dismissInstall() { localStorage.setItem("installDismissed","1"); document.getElementById("installBanner").style.display="none"; }
+
+// ── State ──
+let currentPage="home", editingDeckId=null, selectedColor="teal";
+let activeDeckId=null, editingWordId=null;
+let studyQueue=[], studyIdx=0, flipped=false;
+let knowSet=new Set(), againSet=new Set();
+let currentImageData=null;
+
+// ── Image ──
+function handleImageUpload(e) {
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{ const img=new Image(); img.onload=()=>{ const canvas=document.createElement("canvas"); const MAX=400; let w=img.width,h=img.height; if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}} canvas.width=w;canvas.height=h; canvas.getContext("2d").drawImage(img,0,0,w,h); currentImageData=canvas.toDataURL("image/jpeg",.75); document.getElementById("imgPreview").src=currentImageData; document.getElementById("imgPreview").style.display="block"; document.getElementById("imgHint").style.display="none"; document.getElementById("imgClearBtn").style.display="flex"; }; img.src=ev.target.result; };
+  reader.readAsDataURL(file);
+}
+function clearImage() { currentImageData=null; document.getElementById("imgPreview").style.display="none"; document.getElementById("imgHint").style.display="block"; document.getElementById("imgClearBtn").style.display="none"; document.getElementById("imgFile").value=""; }
+function resetImageUI() { currentImageData=null; document.getElementById("imgPreview").src=""; clearImage(); }
+
+// ── Pages ──
+function showPage(p) {
+  document.querySelectorAll(".page").forEach(el=>el.classList.remove("active"));
+  document.querySelectorAll(".bnav-btn").forEach(el=>el.classList.remove("active"));
+  document.getElementById("page-"+p).classList.add("active");
+  const nb=document.getElementById("bnav-"+p); if(nb) nb.classList.add("active");
+  currentPage=p;
+  if(p==="home")     renderHome();
+  if(p==="manage")   { renderManage(); updateBackupInfo(); }
+  if(p==="stats")    renderStats();
+  if(p==="settings") renderSettingsPage();
+}
+function goHome() { showPage("home"); }
+
+// ── Render Home ──
+async function renderHome() {
+  const d=await loadData();
+  const el=document.getElementById("deckListHome");
+  // Update hero stats
+  const totalWords=Object.values(d.words||{}).reduce((a,arr)=>a+arr.length,0);
+  document.getElementById("heroStatDecks").textContent=d.decks.length+" bộ thẻ";
+  document.getElementById("heroStatWords").textContent=totalWords+" từ";
+
+  if(d.decks.length===0){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">📚</div><p>Chưa có bộ thẻ nào.<br>Vào tab <strong>Quản lý</strong> để tạo nhé!</p></div>`;
+    return;
+  }
+  el.innerHTML=d.decks.map(deck=>{
+    const words=d.words[deck.id]||[];
+    const c=COLORS.find(c=>c.name===deck.color)||COLORS[0];
+    const prog=d.progress&&d.progress[deck.id];
+    const knowCount=prog?(prog.knowIds||[]).length:0;
+    const total=words.length;
+    const due=Math.max(0,total-knowCount);
+    const dueClass=due===0?"zero":(knowCount>0?"":"overdue");
+    return `<div class="deck-card" onclick="startStudy('${deck.id}')">
+      <div class="deck-card-name">
+        <div class="deck-icon" style="background:${c.light}">${deck.emoji}</div>
+        <div class="deck-body">
+          <div class="deck-name">${deck.name}</div>
+          <div class="deck-meta">${total} từ</div>
+        </div>
+      </div>
+      <div class="deck-col">0</div>
+      <div class="deck-col">${knowCount>0?knowCount:0}</div>
+      <div class="deck-col due ${dueClass}">${due||0}</div>
+    </div>`;
+  }).join("");
+  if(!localStorage.getItem("installDismissed")) showInstallBanner();
+}
+
+// ── Render Manage ──
+async function renderManage() {
+  const d=await loadData();
+  const el=document.getElementById("deckListManage");
+  if(d.decks.length===0){ el.innerHTML=`<div class="empty-state"><div class="empty-icon">📂</div><p>Chưa có bộ thẻ nào</p></div>`; return; }
+  el.innerHTML=d.decks.map(deck=>{
+    const words=d.words[deck.id]||[];
+    const c=COLORS.find(c=>c.name===deck.color)||COLORS[0];
+    return `<div class="manage-deck-card">
+      <div class="deck-icon" style="background:${c.light};width:46px;height:46px;border-radius:14px;font-size:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${deck.emoji}</div>
+      <div class="deck-body" style="flex:1;min-width:0;cursor:pointer" onclick="openDeckDetail('${deck.id}')">
+        <div class="deck-name">${deck.name}</div>
+        <div class="deck-meta">${words.length} từ vựng</div>
+      </div>
+      <div class="manage-deck-actions">
+        <button class="icon-btn" onclick="event.stopPropagation();openEditDeck('${deck.id}')">✏️</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ── Backup ──
+async function updateBackupInfo() {
+  const d=await loadLocalData();
+  const total=Object.values(d.words||{}).reduce((a,arr)=>a+arr.length,0);
+  document.getElementById("backupInfo").textContent=`${d.decks.length} bộ thẻ · ${total} từ vựng · Lưu lần cuối: ${new Date().toLocaleString("vi-VN")}`;
+}
+async function exportBackup() {
+  const d=await loadLocalData();
+  const json=JSON.stringify({version:1,exportedAt:new Date().toISOString(),data:d},null,2);
+  const blob=new Blob([json],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=`koif-backup-${Date.now()}.json`; a.click();
+  URL.revokeObjectURL(url); showToast("📥 Đã xuất file backup!");
+}
+async function importBackup(e) {
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    try {
+      const json=JSON.parse(ev.target.result);
+      const d=json.data||json;
+      if(!d.decks) throw new Error("Invalid");
+      if(!confirm("Nhập backup sẽ ghi đè dữ liệu hiện tại. Tiếp tục?")) return;
+      await saveData(d); renderManage(); updateBackupInfo(); showToast("✅ Nhập backup thành công!");
+    } catch(err){ showToast("❌ File không hợp lệ!"); }
+  };
+  reader.readAsText(file); e.target.value="";
+}
+
+// ── Deck Modal ──
+function buildColorRow(sel) {
+  document.getElementById("colorRow").innerHTML=COLORS.map(c=>
+    `<div class="color-dot${c.name===sel?" selected":""}" style="background:${c.bg}" onclick="selectColor('${c.name}')"></div>`
+  ).join("");
+}
+function selectColor(n) { selectedColor=n; buildColorRow(n); }
+function openAddDeck() { editingDeckId=null; selectedColor="teal"; document.getElementById("deckModalTitle").textContent="Tạo bộ thẻ mới"; document.getElementById("deckName").value=""; document.getElementById("deckEmoji").value=""; buildColorRow("teal"); openModal("deckModal"); }
+async function openEditDeck(id) {
+  const d=await loadData(); const deck=d.decks.find(dk=>dk.id===id); if(!deck) return;
+  editingDeckId=id; selectedColor=deck.color;
+  document.getElementById("deckModalTitle").textContent="Chỉnh sửa bộ thẻ";
+  document.getElementById("deckName").value=deck.name; document.getElementById("deckEmoji").value=deck.emoji;
+  buildColorRow(deck.color); openModal("deckModal");
+}
+async function saveDeck() {
+  const name=document.getElementById("deckName").value.trim();
+  const emoji=document.getElementById("deckEmoji").value.trim()||"📚";
+  if(!name){showToast("⚠️ Vui lòng nhập tên!"); return;}
+  const d=await loadData();
+  if(editingDeckId){ const deck=d.decks.find(dk=>dk.id===editingDeckId); if(deck){deck.name=name;deck.emoji=emoji;deck.color=selectedColor;} }
+  else { const id="deck_"+Date.now(); d.decks.push({id,name,emoji,color:selectedColor}); d.words[id]=[]; }
+  await saveData(d); closeModal("deckModal"); renderManage();
+}
+
+// ── Deck Detail ──
+async function openDeckDetail(id) {
+  activeDeckId=id; const d=await loadData(); const deck=d.decks.find(dk=>dk.id===id); if(!deck) return;
+  document.getElementById("detailTitle").textContent=deck.emoji+" "+deck.name;
+  renderDetailWords(id); openModal("detailModal");
+}
+async function renderDetailWords(id) {
+  const d=await loadData(); const words=d.words[id]||[];
+  const el=document.getElementById("detailWordList");
+  if(words.length===0){ el.innerHTML=`<div class="empty-state" style="padding:16px"><div class="empty-icon">📝</div><p>Chưa có từ nào.<br>Nhấn + để thêm từ mới!</p></div>`; return; }
+  el.innerHTML=`<div class="word-list">${words.map(w=>{
+    const thumb=w.img?`<div class="word-thumb"><img src="${w.img}" alt="${w.en}"></div>`:`<div class="word-thumb">📖</div>`;
+    return `<div class="word-item">${thumb}<div class="word-body"><div class="word-en">${w.en}</div><div class="word-vn">${w.vn}${w.ph?" · "+w.ph:""}</div></div><div class="word-actions"><button class="icon-btn" onclick="openEditWord('${id}','${w.id}')">✏️</button><button class="icon-btn" onclick="deleteWord('${id}','${w.id}')">🗑</button></div></div>`;
+  }).join("")}</div>`;
+}
+
+// ── Word Modal ──
+function openAddWord() { editingWordId=null; document.getElementById("wordModalTitle").textContent="Thêm từ mới"; ["wordEn","wordPh","wordVn","wordEx"].forEach(id=>document.getElementById(id).value=""); resetImageUI(); openModal("wordModal"); }
+async function openEditWord(deckId,wordId) {
+  const d=await loadData(); const w=(d.words[deckId]||[]).find(w=>w.id===wordId); if(!w) return;
+  editingWordId=wordId; document.getElementById("wordModalTitle").textContent="Chỉnh sửa từ";
+  document.getElementById("wordEn").value=w.en; document.getElementById("wordPh").value=w.ph||"";
+  document.getElementById("wordVn").value=w.vn; document.getElementById("wordEx").value=w.ex||"";
+  if(w.img){currentImageData=w.img;document.getElementById("imgPreview").src=w.img;document.getElementById("imgPreview").style.display="block";document.getElementById("imgHint").style.display="none";document.getElementById("imgClearBtn").style.display="flex";}else{resetImageUI();}
+  openModal("wordModal");
+}
+async function saveWord() {
+  const en=document.getElementById("wordEn").value.trim(), ph=document.getElementById("wordPh").value.trim();
+  const vn=document.getElementById("wordVn").value.trim(), ex=document.getElementById("wordEx").value.trim();
+  if(!en||!vn){showToast("⚠️ Vui lòng điền đủ thông tin!"); return;}
+  const d=await loadData(); if(!d.words[activeDeckId]) d.words[activeDeckId]=[];
+  if(editingWordId){ const w=d.words[activeDeckId].find(w=>w.id===editingWordId); if(w){w.en=en;w.ph=ph;w.vn=vn;w.ex=ex;w.img=currentImageData||null;} }
+  else d.words[activeDeckId].push({id:"w_"+Date.now(),en,ph,vn,ex,img:currentImageData||null});
+  await saveData(d); closeModal("wordModal"); renderDetailWords(activeDeckId);
+}
+async function deleteWord(deckId,wordId) {
+  const d=await loadData(); d.words[deckId]=(d.words[deckId]||[]).filter(w=>w.id!==wordId);
+  await saveData(d); renderDetailWords(deckId);
+}
+
+// ── Delete Deck ──
+function confirmDeleteDeck() {
+  document.getElementById("confirmTitle").textContent="Xoá bộ thẻ?";
+  document.getElementById("confirmMsg").textContent="Tất cả từ vựng sẽ bị xoá vĩnh viễn. Không thể khôi phục!";
+  document.getElementById("confirmOkBtn").onclick=async()=>{ const d=await loadData(); d.decks=d.decks.filter(dk=>dk.id!==activeDeckId); delete d.words[activeDeckId]; await saveData(d); closeModal("confirmModal"); closeModal("detailModal"); renderManage(); };
+  openModal("confirmModal");
+}
+
+// ── Modal helpers ──
+function openModal(id)  { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+document.querySelectorAll(".overlay").forEach(o=>{ o.addEventListener("click",e=>{ if(e.target===o) o.classList.remove("open"); }); });
+
+// ── Study mode & direction ──
+let studyMode = 'flash';   // 'flash' | 'fill'
+let studyDir  = 'en';      // 'en' (show EN → guess VI) | 'vi' (show VI → guess EN)
+
+function setStudyMode(m) {
+  studyMode = m;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('mode' + (m==='flash'?'Flash':'Fill')).classList.add('active');
+  // re-render current card without resetting index
+  if (studyIdx < studyQueue.length) renderStudyCard();
+}
+
+function setDirection(d) {
+  studyDir = d;
+  document.getElementById('dirEN').classList.toggle('active', d==='en');
+  document.getElementById('dirVI').classList.toggle('active', d==='vi');
+  if (studyIdx < studyQueue.length) renderStudyCard();
+}
+
+// ── Fill-in-blank helpers ──
+let fillChecked = false;
+
+function submitFill() {
+  if (fillChecked) return;
+  fillChecked = true;
+  const w     = studyQueue[studyIdx];
+  const ans   = (studyDir==='en' ? w.vn : w.en).trim().toLowerCase();
+  const input = document.getElementById('fillInput');
+  const userAns = (input.value||'').trim().toLowerCase();
+  const fb      = document.getElementById('fillFeedback');
+  const rev     = document.getElementById('fillReveal');
+  const actRow  = document.getElementById('actionRow');
+
+  // fuzzy: allow 1-char typo for words >4 chars
+  const isCorrect = userAns === ans || (ans.length > 4 && levenshtein(userAns, ans) <= 1);
+
+  input.classList.add(isCorrect ? 'correct' : 'wrong');
+  fb.style.display = 'block';
+  fb.className = 'fill-feedback ' + (isCorrect ? 'correct-fb' : 'wrong-fb');
+  fb.textContent = isCorrect ? '🎉 Chính xác!' : '❌ Chưa đúng!';
+  rev.style.display = 'block';
+  rev.innerHTML = `Đáp án đúng: <strong>${studyDir==='en' ? w.vn : w.en}</strong>${w.ph ? ' <span style="color:var(--muted);font-size:12px">'+w.ph+'</span>' : ''}`;
+  actRow.classList.add('vis');
+}
+
+function useFillHint(letter, btn) {
+  const input = document.getElementById('fillInput');
+  if (!input) return;
+  input.value = (input.value || '') + letter;
+  btn.classList.add('used');
+  input.focus();
+}
+
+function levenshtein(a, b) {
+  const m=a.length, n=b.length;
+  const dp=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);
+  for(let j=0;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++) for(let j=1;j<=n;j++) dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+function shuffleLetters(str) {
+  // take letters from answer + 2-3 decoys
+  const letters = str.toLowerCase().replace(/\s/g,'').split('');
+  const decoys  = 'abcdefghijklmnoprstuvwxyz'.split('').filter(c=>!letters.includes(c));
+  const extras  = decoys.sort(()=>Math.random()-.5).slice(0, Math.min(3, Math.max(0, 8-letters.length)));
+  return shuffle([...letters, ...extras]);
+}
+
+// ── Study ──
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+async function startStudy(deckId) {
+  const d=await loadData();
+  const deck=d.decks.find(dk=>dk.id===deckId);
+  const words=d.words[deckId]||[];
+  if(words.length===0){showToast("⚠️ Bộ thẻ chưa có từ nào!"); return;}
+  activeDeckId=deckId;
+  const prog=d.progress&&d.progress[deckId];
+  const s=loadSettings();
+  if(prog&&prog.knowIds&&prog.knowIds.length>0&&s.askResume!==false){
+    const resume=confirm(`Bạn đã học ${prog.knowIds.length} từ lần trước.\nTiếp tục hay học lại từ đầu?`);
+    if(resume){
+      const remaining=words.filter(w=>!prog.knowIds.includes(w.id));
+      if(remaining.length===0){ if(confirm("Bạn đã biết hết! 🎉 Học lại từ đầu không?")){ clearProgress(deckId); studyQueue=shuffle([...words]); }else return; }
+      else { studyQueue=shuffle(remaining); knowSet=new Set(prog.knowIds); againSet=new Set(prog.againIds||[]); }
+    } else { clearProgress(deckId); studyQueue=shuffle([...words]); knowSet.clear(); againSet.clear(); }
+  } else { studyQueue=shuffle([...words]); knowSet.clear(); againSet.clear(); }
+  studyIdx=0; flipped=false; fillChecked=false;
+  // sync mode buttons
+  document.getElementById('modeFlash').classList.toggle('active', studyMode==='flash');
+  document.getElementById('modeFill').classList.toggle('active',  studyMode==='fill');
+  document.getElementById('dirEN').classList.toggle('active', studyDir==='en');
+  document.getElementById('dirVI').classList.toggle('active', studyDir==='vi');
+  const c=COLORS.find(c=>c.name===deck.color)||COLORS[0];
+  document.getElementById("progFill").style.background=c.bg;
+  document.getElementById("studyTitle").textContent=deck.emoji+" "+deck.name;
+  showPage("study"); animateStudyStart(); updateStudyUI(); renderStudyCard();
+}
+async function saveProgress() {
+  const d=await loadData(); if(!d.progress) d.progress={};
+  d.progress[activeDeckId]={knowIds:[...knowSet],againIds:[...againSet],savedAt:new Date().toISOString()};
+  await saveData(d);
+}
+async function clearProgress(deckId) {
+  const d=await loadData(); if(d.progress) delete d.progress[deckId];
+  await saveData(d); knowSet.clear(); againSet.clear();
+}
+function updateStudyUI() {
+  const total=studyQueue.length, done=studyIdx;
+  const pct=total?Math.round((done/total)*100):0;
+  document.getElementById("progLabel").textContent=`Thẻ ${Math.min(done+1,total)} / ${total}`;
+  document.getElementById("progPct").textContent=pct+"%";
+  document.getElementById("progFill").style.width=pct+"%";
+  document.getElementById("sKnow").textContent=knowSet.size;
+  document.getElementById("sAgain").textContent=againSet.size;
+  document.getElementById("sLeft").textContent=Math.max(0,total-done);
+}
+async function renderStudyCard() {
+  const area   = document.getElementById("studyArea");
+  fillChecked  = false;
+
+  if (studyIdx >= studyQueue.length) {
+    document.getElementById("flipWrap").style.display = "none";
+    document.getElementById("actionRow").classList.remove("vis");
+    const d2=await loadData(); const allWords=d2.words[activeDeckId]||[];
+    const allDone=allWords.every(w=>knowSet.has(w.id));
+    if(allDone) clearProgress(activeDeckId); else saveProgress();
+    const total2=allWords.length; const pct2=total2?Math.round(knowSet.size/total2*100):0;
+    const stars=pct2>=90?3:pct2>=60?2:1;
+    const starStr="⭐".repeat(stars)+(stars<3?"☆".repeat(3-stars):"");
+    launchCelebration(allDone);
+    area.innerHTML=`<div class="done-box">
+      <span class="done-trophy">${allDone?"🏆":"🎉"}</span>
+      <span class="done-stars">${[...starStr].map(s=>`<span class="done-star">${s}</span>`).join("")}</span>
+      <h2>${allDone?"Hoàn hảo! 🌟":"Làm tốt lắm!"}</h2>
+      <p>${allDone?"Bạn đã biết hết tất cả từ!":"Tiếp tục luyện tập để ghi nhớ tốt hơn nhé."}</p>
+      <div class="done-stats">
+        <div class="done-stat"><div class="done-stat-num" style="color:var(--teal)">${knowSet.size}</div><div class="done-stat-label">Đã biết</div></div>
+        <div class="done-stat"><div class="done-stat-num" style="color:var(--coral)">${againSet.size}</div><div class="done-stat-label">Cần ôn</div></div>
+        <div class="done-stat"><div class="done-stat-num">${pct2}%</div><div class="done-stat-label">Hoàn thành</div></div>
+      </div>
+      <div class="done-btns">
+        <button class="btn btn-primary" onclick="startStudy('${activeDeckId}')">Học lại</button>
+        <button class="btn btn-secondary" onclick="goHome()">Về trang chủ</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  const w   = studyQueue[studyIdx]; flipped = false;
+  const d   = await loadData();
+  const deck= d.decks.find(dk=>dk.id===activeDeckId);
+  const c   = COLORS.find(c=>c.name===(deck?deck.color:"teal"))||COLORS[0];
+  const s   = loadSettings();
+  const showPh = s.phonetic!==false;
+
+  // Reset controls
+  document.getElementById("actionRow").classList.remove("vis");
+
+  // What to SHOW on front, what to GUESS
+  const frontText = studyDir==='en' ? w.en : w.vn;
+  const backText  = studyDir==='en' ? w.vn : w.en;
+  const frontLabel= studyDir==='en' ? '🇬🇧 Tiếng Anh' : '🇻🇳 Tiếng Việt';
+  const backLabel = studyDir==='en' ? '🇻🇳 Nghĩa'      : '🇬🇧 Đáp án';
+  const phEl      = w.ph&&showPh&&studyDir==='en' ? `<div class="card-ph">${w.ph}</div>` : '';
+  const imgEl     = w.img ? `<img class="card-img" src="${w.img}" alt="">` : '';
+  const exEl      = w.ex  ? `<div class="card-ex">"${w.ex}"</div>`        : '';
+
+  // ── FLASH MODE ──
+  if (studyMode === 'flash') {
+    const fw = document.getElementById("flipWrap");
+    fw.style.display = "flex";
+    fw.querySelector('.flip-btn').textContent = `↕ Nhấn để xem ${studyDir==='en'?'nghĩa':'từ gốc'}`;
+    area.innerHTML=`<div class="card-stage" id="cardStage">
+      <div class="card-inner" id="cardInner">
+        <div class="card-face card-front">
+          <div class="card-badge" style="background:${c.light};color:${c.dark}">${frontLabel}</div>
+          <div class="card-num">${studyIdx+1}/${studyQueue.length}</div>
+          ${imgEl}
+          <div class="card-word">${frontText}</div>${phEl}
+        </div>
+        <div class="card-face card-back" style="background:${c.bg}">
+          <div class="card-badge" style="background:rgba(255,255,255,.2);color:#fff">${backLabel}</div>
+          <div class="card-vn">${backText}</div>${exEl}
+        </div>
+      </div>
+    </div>`;
+    // Must attach AFTER innerHTML is set
+    document.getElementById("cardStage").onclick = flipCard;
+    document.getElementById("flipWrap").querySelector('.flip-btn').onclick = flipCard;
+  }
+
+  // ── FILL-IN-THE-BLANK MODE ──
+  else {
+    document.getElementById("flipWrap").style.display = "none";
+    const answer = backText.trim();
+    // Build scrambled hint letters (only for short answers ≤ 12 chars, no spaces)
+    const showLetters = answer.replace(/\s/g,'').length <= 14;
+    const letterBtns  = showLetters
+      ? shuffleLetters(answer).map(l =>
+          `<button class="hint-letter" onclick="useFillHint('${l}',this)">${l}</button>`
+        ).join('')
+      : '';
+
+    area.innerHTML=`<div class="fill-card">
+      <div class="fill-prompt-label">${frontLabel} — đọc và điền nghĩa ${studyDir==='en'?'🇻🇳':'🇬🇧'}</div>
+      <div class="fill-prompt">${frontText}${phEl?'<br><span style="font-size:13px;color:var(--muted);font-weight:600">'+w.ph+'</span>':''}</div>
+      ${imgEl ? `<div style="display:flex;justify-content:center;margin-bottom:14px">${imgEl}</div>` : ''}
+      ${showLetters ? `<div class="hint-letters">${letterBtns}</div>` : ''}
+      <div class="fill-input-wrap">
+        <input id="fillInput" class="fill-input" placeholder="Nhập đáp án..." autocomplete="off" autocorrect="off" spellcheck="false"
+          onkeydown="if(event.key==='Enter')submitFill()">
+        <button class="fill-submit" onclick="submitFill()">➤</button>
+      </div>
+      <div id="fillFeedback" class="fill-feedback"></div>
+      <div id="fillReveal"   class="fill-answer-reveal"></div>
+      ${w.ex?`<div style="font-size:12px;color:var(--muted);font-weight:600;text-align:center;font-style:italic;margin-top:6px">"${w.ex}"</div>`:''}
+    </div>`;
+    setTimeout(()=>{ const inp=document.getElementById('fillInput'); if(inp) inp.focus(); },100);
+  }
+  updateStudyUI();
+}
+function flipCard() {
+  if (flipped) return;
+  const inner = document.getElementById("cardInner");
+  if (!inner) return;
+  flipped = true;
+  const s = loadSettings();
+  if (s.anim !== false) inner.classList.add("flipped");
+  else inner.style.transform = "rotateY(180deg)";
+  document.getElementById("flipWrap").style.display  = "none";
+  document.getElementById("actionRow").classList.add("vis");
+}
+async function markKnow() {
+  knowSet.add(studyQueue[studyIdx].id);
+  againSet.delete(studyQueue[studyIdx].id);
+  recordStat('correct');
+  studyIdx++; flipped = false; fillChecked = false;
+  renderStudyCard();
+}
+async function markAgain() {
+  againSet.add(studyQueue[studyIdx].id);
+  recordStat('wrong');
+  studyIdx++; flipped = false; fillChecked = false;
+  renderStudyCard();
+}
+
+// ── STATS TRACKING ──
+function todayKey() { return new Date().toISOString().slice(0,10); }
+
+function recordStat(result) {
+  // result: 'correct' | 'wrong'
+  try {
+    const key = 'koif_stats';
+    const all = JSON.parse(localStorage.getItem(key)||'{}');
+    const day = todayKey();
+    if (!all[day]) all[day] = {correct:0, wrong:0};
+    all[day][result]++;
+    localStorage.setItem(key, JSON.stringify(all));
+  } catch(e) {}
+}
+
+function getAllStats() {
+  try { return JSON.parse(localStorage.getItem('koif_stats')||'{}'); }
+  catch(e) { return {}; }
+}
+
+async function renderStats() {
+  const stats  = getAllStats();
+  const today  = todayKey();
+  const data   = await loadData();
+
+  // ── TODAY ──
+  const td = stats[today]||{correct:0,wrong:0};
+  const tdTotal = td.correct + td.wrong;
+  document.getElementById('todayStudied').textContent = tdTotal;
+  document.getElementById('todayCorrect').textContent = td.correct;
+  document.getElementById('todayWrong').textContent   = td.wrong;
+  document.getElementById('todayRate').textContent    = tdTotal ? Math.round(td.correct/tdTotal*100)+'%' : '—';
+
+  // ── STREAK ──
+  const days = Object.keys(stats).sort();
+  let streak = 0, totalDays = days.length;
+  if (days.length) {
+    let cur = new Date(today); streak = 0;
+    while (true) {
+      const k = cur.toISOString().slice(0,10);
+      if (stats[k] && (stats[k].correct+stats[k].wrong)>0) { streak++; cur.setDate(cur.getDate()-1); }
+      else break;
+    }
+  }
+  document.getElementById('streakDays').textContent = streak;
+  document.getElementById('totalDays').textContent  = totalDays;
+
+  // ── TOTALS ──
+  let totC=0, totW=0;
+  Object.values(stats).forEach(d=>{ totC+=d.correct||0; totW+=d.wrong||0; });
+  const totAll = totC+totW;
+  document.getElementById('totalStudied').textContent = totAll;
+  document.getElementById('totalCorrect').textContent = totC;
+  document.getElementById('totalWrong').textContent   = totW;
+  document.getElementById('totalRate').textContent    = totAll ? Math.round(totC/totAll*100)+'%' : '—';
+
+  // ── 7-DAY BAR CHART ──
+  const chart = document.getElementById('weekBarChart');
+  const last7 = [];
+  for (let i=6;i>=0;i--) { const d=new Date(); d.setDate(d.getDate()-i); last7.push(d.toISOString().slice(0,10)); }
+  const maxVal = Math.max(1, ...last7.map(k=>{ const d=stats[k]||{}; return (d.correct||0)+(d.wrong||0); }));
+  const days7  = ['T2','T3','T4','T5','T6','T7','CN','T2','T3','T4','T5','T6','T7','CN'];
+  chart.innerHTML = last7.map((k,i)=>{
+    const dd = stats[k]||{correct:0,wrong:0};
+    const total = dd.correct+dd.wrong;
+    const hC = Math.round((dd.correct/maxVal)*72);
+    const hW = Math.round((dd.wrong/maxVal)*72);
+    const dow = new Date(k).getDay(); // 0=Sun
+    const lbl = ['CN','T2','T3','T4','T5','T6','T7'][dow];
+    const isToday = k===today;
+    return `<div class="bar-col" title="${k}: ${total} từ">
+      <div style="display:flex;flex-direction:column;justify-content:flex-end;height:72px;gap:1px">
+        ${dd.wrong  ? `<div class="bar-fill" style="height:${hW}px;background:var(--coral);opacity:.8"></div>` : ''}
+        ${dd.correct? `<div class="bar-fill" style="height:${hC}px;background:var(--accent)"></div>` : ''}
+        ${!total    ? `<div class="bar-fill" style="height:3px;background:var(--border)"></div>` : ''}
+      </div>
+      <div class="bar-lbl" style="color:${isToday?'var(--accent)':'var(--muted)'};font-weight:${isToday?900:700}">${lbl}</div>
+    </div>`;
+  }).join('');
+
+  // ── DECK PROGRESS ──
+  const dpList = document.getElementById('deckProgressList');
+  dpList.innerHTML = '';
+  if (!data.decks.length) { dpList.innerHTML='<div style="color:var(--muted);font-size:13px;font-weight:700">Chưa có bộ thẻ nào</div>'; }
+  data.decks.forEach(deck=>{
+    const words   = data.words[deck.id]||[];
+    const prog    = data.progress&&data.progress[deck.id];
+    const known   = prog?(prog.knowIds||[]).length:0;
+    const total   = words.length;
+    const pct     = total?Math.round(known/total*100):0;
+    const c       = COLORS.find(x=>x.name===deck.color)||COLORS[0];
+    dpList.innerHTML += `<div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;margin-bottom:5px">
+        <span>${deck.emoji} ${deck.name}</span>
+        <span style="color:${c.bg}">${known}/${total} (${pct}%)</span>
+      </div>
+      <div style="height:8px;background:var(--border);border-radius:6px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${c.bg};border-radius:6px;transition:width .5s"></div>
+      </div>
+    </div>`;
+  });
+
+  // ── HEATMAP (90 days) ──
+  const hmap = document.getElementById('heatmapGrid');
+  const cells90 = [];
+  for (let i=89;i>=0;i--) { const d=new Date(); d.setDate(d.getDate()-i); cells90.push(d.toISOString().slice(0,10)); }
+  const maxH = Math.max(1,...cells90.map(k=>{ const d=stats[k]||{}; return (d.correct||0)+(d.wrong||0); }));
+  // group into weeks
+  const weeks = [];
+  let week = [];
+  // pad start
+  const firstDow = new Date(cells90[0]).getDay();
+  for (let i=0;i<firstDow;i++) week.push(null);
+  cells90.forEach(k=>{ week.push(k); if(week.length===7){weeks.push(week);week=[];} });
+  if(week.length) weeks.push(week);
+
+  hmap.innerHTML = weeks.map(w=>`<div class="heatmap-row">${
+    w.map(k=>{
+      if(!k) return `<div class="heatmap-cell" style="background:transparent"></div>`;
+      const dd=stats[k]||{}; const n=(dd.correct||0)+(dd.wrong||0);
+      const intensity = n===0?0:Math.ceil((n/maxH)*3);
+      const colors=['var(--border)','color-mix(in srgb,var(--accent) 30%,transparent)','color-mix(in srgb,var(--accent) 60%,transparent)','var(--accent)'];
+      const isToday=k===today;
+      return `<div class="heatmap-cell" style="background:${colors[intensity]};${isToday?'outline:2px solid var(--accent);outline-offset:1px':''}" title="${k}: ${n} từ"></div>`;
+    }).join('')
+  }</div>`).join('');
+
+  // ── RETENTION TABLE ──
+  const periods = [
+    {lbl:'Hôm nay',    days:0},
+    {lbl:'7 ngày',     days:7},
+    {lbl:'30 ngày',    days:30},
+    {lbl:'Tất cả',     days:9999},
+  ];
+  const tbody = document.getElementById('retentionTable');
+  tbody.innerHTML = periods.map(p=>{
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-p.days);
+    let c=0,w=0;
+    Object.entries(stats).forEach(([k,v])=>{
+      if(p.days===0 && k!==today) return;
+      if(p.days!==0 && p.days!==9999 && new Date(k)<cutoff) return;
+      c+=v.correct||0; w+=v.wrong||0;
+    });
+    const tot=c+w;
+    const rate=tot?Math.round(c/tot*100):null;
+    const cls=rate===null?'':rate>=80?'ret-good':'ret-bad';
+    return `<tr>
+      <td style="font-weight:800">${p.lbl}</td>
+      <td>${tot||'—'}</td>
+      <td class="ret-good">${c||'—'}</td>
+      <td class="${cls}">${rate!==null?rate+'%':'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Settings ──
+const THEMES=[
+  {id:"dark",name:"Tối",bg:"#111318",card:"#1A1D24",text:"#EEF0F5",muted:"#6B7280"},
+  {id:"light",name:"Sáng",bg:"#F7F7F7",card:"#FFFFFF",text:"#1C1C1E",muted:"#6E6E73"},
+  {id:"warm",name:"Ấm",bg:"#F5F0E8",card:"#FDFAF4",text:"#2C2416",muted:"#7A6E5A"},
+];
+const ACCENTS=[
+  {id:"teal",bg:"#00D4AA",light:"rgba(0,212,170,0.15)",dark:"#00A882"},
+  {id:"purple",bg:"#A78BFA",light:"rgba(167,139,250,0.15)",dark:"#7C3AED"},
+  {id:"blue",bg:"#60A5FA",light:"rgba(96,165,250,0.15)",dark:"#2563EB"},
+  {id:"amber",bg:"#FBBF24",light:"rgba(251,191,36,0.15)",dark:"#D97706"},
+  {id:"coral",bg:"#F87171",light:"rgba(248,113,113,0.15)",dark:"#DC2626"},
+  {id:"pink",bg:"#F472B6",light:"rgba(244,114,182,0.15)",dark:"#DB2777"},
+  {id:"green",bg:"#4ADE80",light:"rgba(74,222,128,0.15)",dark:"#16A34A"},
+  {id:"indigo",bg:"#818CF8",light:"rgba(129,140,248,0.15)",dark:"#4338CA"},
+];
+const FONTS=[
+  {id:"nunito",name:"Nunito",sample:"The quick brown fox",css:"'Nunito', sans-serif"},
+  {id:"system",name:"Mặc định",sample:"The quick brown fox",css:"-apple-system, BlinkMacSystemFont, sans-serif"},
+  {id:"serif",name:"Serif",sample:"The quick brown fox",css:"Georgia, 'Times New Roman', serif"},
+  {id:"mono",name:"Monospace",sample:"The quick brown fox",css:"'Courier New', Courier, monospace"},
+];
+function loadSettings() { try{return JSON.parse(localStorage.getItem("appSettings")||"{}");}catch(e){return{};} }
+function saveSettings(s) { localStorage.setItem("appSettings",JSON.stringify(s)); }
+function applySettings() {
+  const s=loadSettings();
+  const theme=THEMES.find(t=>t.id===(s.theme||"dark"))||THEMES[0];
+  const accent=ACCENTS.find(a=>a.id===(s.accent||"teal"))||ACCENTS[0];
+  const font=FONTS.find(f=>f.id===(s.font||"nunito"))||FONTS[0];
+  const root=document.documentElement;
+  root.style.setProperty("--bg",theme.bg); root.style.setProperty("--card",theme.card);
+  root.style.setProperty("--text",theme.text); root.style.setProperty("--muted",theme.muted);
+  root.style.setProperty("--accent",accent.bg); root.style.setProperty("--accent-l",accent.light); root.style.setProperty("--accent-d",accent.dark);
+  root.style.setProperty("--teal",accent.bg); root.style.setProperty("--teal-l",accent.light); root.style.setProperty("--teal-d",accent.dark);
+  root.style.setProperty("--font",font.css); document.body.style.fontFamily=font.css;
+  ["anim","phonetic","askResume"].forEach(k=>{ const val=s[k]!==false; const el=document.getElementById("toggle"+k.charAt(0).toUpperCase()+k.slice(1)); if(el) el.classList.toggle("on",val); });
+}
+function renderSettingsPage() {
+  const s=loadSettings();
+  document.getElementById("themeGrid").innerHTML=THEMES.map(t=>`<button class="theme-btn${(s.theme||"dark")===t.id?" selected":""}" onclick="setTheme('${t.id}')" style="background:${t.bg}"><div class="theme-preview" style="background:${t.card}"><div style="width:40%;height:8px;border-radius:4px;background:${t.text};opacity:.7"></div><div style="width:20%;height:8px;border-radius:4px;background:#00D4AA"></div></div><div class="theme-name" style="color:${t.text}">${t.name}</div></button>`).join("");
+  document.getElementById("accentGrid").innerHTML=ACCENTS.map(a=>`<button class="accent-btn${(s.accent||"teal")===a.id?" selected":""}" style="background:${a.bg}" onclick="setAccent('${a.id}')"></button>`).join("");
+  document.getElementById("fontGrid").innerHTML=FONTS.map(f=>`<button class="font-btn${(s.font||"nunito")===f.id?" selected":""}" onclick="setFont('${f.id}')"><div class="font-name" style="font-family:${f.css}">${f.name}</div><div class="font-sample" style="font-family:${f.css}">${f.sample}</div></button>`).join("");
+  ["anim","phonetic","askResume"].forEach(k=>{ const val=s[k]!==false; const el=document.getElementById("toggle"+k.charAt(0).toUpperCase()+k.slice(1)); if(el) el.classList.toggle("on",val); });
+}
+function setTheme(id){const s=loadSettings();s.theme=id;saveSettings(s);applySettings();renderSettingsPage();showToast("✓ Đã đổi giao diện");}
+function setAccent(id){const s=loadSettings();s.accent=id;saveSettings(s);applySettings();renderSettingsPage();showToast("✓ Đã đổi màu chủ đạo");}
+function setFont(id){const s=loadSettings();s.font=id;saveSettings(s);applySettings();renderSettingsPage();showToast("✓ Đã đổi font chữ");}
+function toggleSetting(key){const s=loadSettings();s[key]=s[key]===false?true:false;saveSettings(s);applySettings();showToast("✓ Đã lưu");}
+
+// ── Splash ──
+function initSplash() {
+  const s=loadSettings(); const accentId=s.accent||"teal";
+  const map={teal:"#00D4AA",purple:"#A78BFA",blue:"#60A5FA",amber:"#FBBF24",coral:"#F87171",pink:"#F472B6",green:"#4ADE80",indigo:"#818CF8"};
+  document.getElementById("splash").style.background="#111318";
+  setTimeout(()=>{ document.getElementById("splash").classList.add("hide"); setTimeout(()=>{document.getElementById("splash").style.display="none";},450); },1800);
+}
+
+// ── Study animation ──
+function animateStudyStart() {
+  const p=document.getElementById("page-study");
+  p.style.opacity="0"; p.style.transform="translateY(20px)";
+  p.style.transition="all .35s cubic-bezier(.34,1.2,.64,1)";
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ p.style.opacity="1"; p.style.transform="none"; }));
+  setTimeout(()=>{ p.style.transition=""; },350);
+}
+
+// ── Confetti ──
+function launchCelebration(allKnown) {
+  const el=document.getElementById("celebration"); el.innerHTML="";
+  const colors=["#1D9E75","#7F77DD","#378ADD","#D4537E","#E0920A","#D85A30","#639922","#fff"];
+  for(let i=0;i<80;i++){
+    const p=document.createElement("div"); p.className="confetti-piece";
+    const c=colors[Math.floor(Math.random()*colors.length)];
+    const sz=6+Math.random()*10; const x=Math.random()*100;
+    const dur=1.5+Math.random()*2; const delay=Math.random()*1.2;
+    const shape=Math.random()>.5?"50%":Math.random()>.5?"2px":"50% 0";
+    p.style.cssText=`left:${x}vw;top:-20px;width:${sz}px;height:${sz}px;background:${c};border-radius:${shape};animation-duration:${dur}s;animation-delay:${delay}s;`;
+    el.appendChild(p);
+  }
+  if(allKnown){ for(let b=0;b<5;b++) setTimeout(()=>launchBurst(el,20+Math.random()*60,15+Math.random()*50,colors),b*300); }
+  setTimeout(()=>{el.innerHTML="";},4000);
+}
+function launchBurst(el,cx,cy,colors) {
+  for(let i=0;i<16;i++){
+    const d=document.createElement("div"); d.className="firework";
+    const angle=(i/16)*Math.PI*2; const dist=40+Math.random()*60;
+    const tx=Math.cos(angle)*dist; const ty=Math.sin(angle)*dist;
+    const c=colors[Math.floor(Math.random()*colors.length)];
+    d.style.cssText=`left:${cx}vw;top:${cy}vh;background:${c};width:${4+Math.random()*6}px;height:${4+Math.random()*6}px;transform:translate(${tx}px,${ty}px);animation:fireworkBurst .8s ${Math.random()*.2}s ease-out both;`;
+    el.appendChild(d);
+  }
+}
+
+// ── Service Worker ──
+if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+
+// ── Init ──
+(async()=>{
+  applySettings();
+  initSplash();
+  await seedDefault();
+  renderHome();
+})();
+</script>
+</body>
+</html>
